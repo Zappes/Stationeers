@@ -1,0 +1,98 @@
+# Controller for a number of heaters and coolers
+#
+# Make sure to have the following parts on your network:
+# - An air sensor
+# - A display (optional)
+# - Any number of wall coolers
+# - Any number of wall heaters
+#
+# As soon as everything is hooked up, the coolers and heaters will be controlled
+# so that the temperature stays between heatUnder and coolAbove.
+#
+# Written by Zappes
+# CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+alias Sensor d0
+alias Display d1
+alias temperature r10
+
+define hashHeater 24258244
+define hashCooler -739292323
+
+define hysteresis 5     # Dead zone around the trigger temperatures
+define target 30        # The target temperature
+define heatUnder 20     # The temperature below which the heaters start
+define coolAbove 40     # The temperature above which the coolers start
+
+define colCold 0
+define colGood 2
+define colHot 4
+
+loop:
+    jal updateTemperature
+    jal updateDisplay
+    jal checkHeaters
+    jal checkCoolers
+    yield
+    j loop
+
+checkCoolers:
+    move r0 temperature
+    ble r0 target ccOff # disable cooler is temperature <= target
+    sub r0 r0 coolAbove
+    add r0 r0 hysteresis
+    bgez r0 ccOn
+
+ccOff:
+    move r1 0
+    sb hashCooler On r1
+    j chDone
+
+ccOn:
+    move r1 1
+    sb hashCooler On r1
+
+ccDone:
+    j ra
+
+checkHeaters:
+    move r0 temperature
+    bge r0 target chOff # disable heater if temperature >= target
+    sub r0 r0 heatUnder
+    add r0 r0 hysteresis
+    blez r0 chOn
+    j chDone
+
+chOff:
+    move r1 0
+    sb hashHeater On r1
+    j chDone
+
+chOn:
+    move r1 1
+    sb hashHeater On r1
+
+chDone:
+    j ra
+
+
+updateTemperature:
+    l temperature Sensor Temperature
+    sub temperature temperature 273.15
+    round temperature temperature
+    j ra
+
+updateDisplay:
+    bdns Display udDone                     # ignore if no display is connected
+    s Display Setting temperature
+
+    brge temperature heatUnder 3
+    s Display Color colCold
+    j udDone
+    brge temperature coolAbove 3
+    s Display Color colGood
+    j udDone
+    s Display Color colHot
+
+udDone:
+    j ra
