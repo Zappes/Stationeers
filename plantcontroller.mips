@@ -1,0 +1,58 @@
+# Controller for a set of three hydroponics and harvies.
+#
+# Make sure to have the following parts on your network:
+# - 3 hydroponic devices
+# - 3 harvies
+#
+# As soon as everything is hooked up, put seeds in the harvies
+# and watch your plants growing.
+#
+# There's one speciality: Write "1" to the IC housing of a
+# planting module and sowing will be blocked until you set it
+# to "0" again. You can use this to block sowing if the
+# conditions don't allow growing.
+#
+# Written by Zappes
+# CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+alias hydro1 d0
+alias hydro2 d1
+alias hydro3 d2
+alias harvie1 d3
+alias harvie2 d4
+alias harvie3 d5
+
+    move r6 0
+
+plantLoop:
+    push r6
+    jal process
+    
+    add r6 r6 1
+    mod r6 r6 3
+
+    sleep 3 # no need to run this more than every 3 seconds
+
+    j plantLoop
+
+# processes one harvie and hydro. pass the number (0-2) on the stack.
+process:
+    pop r0      # we can access the hydro with dr0
+    add r1 r0 3 # we can access the harvie with dr1
+
+    ls r2 dr0 0 Occupied
+    bnez r2 checkHarvest # don't plant if there's a plant
+
+    l r2 db Setting
+    beq r2 1 processEnd  # don't plant if it's blocked
+
+    s dr1 Plant 1
+    j processEnd # it can't be mature already, so skip harvest  
+
+checkHarvest:
+    ls r2 dr0 0 Mature
+    beqz r2 processEnd
+    s dr1 Harvest 1
+    
+processEnd:
+    j ra
