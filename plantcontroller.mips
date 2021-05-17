@@ -43,6 +43,9 @@ process:
     ls r2 dr0 0 Occupied
     bnez r2 checkHarvest # don't plant if there's a plant
 
+    ls r2 dr1 0 Occupied
+    beqz r2 checkHarvest # don't plant if we don't have seeds
+    
     l r2 db Setting
     beq r2 1 processEnd  # don't plant if it's blocked
 
@@ -50,9 +53,12 @@ process:
     j processEnd # it can't be mature already, so skip harvest  
 
 checkHarvest:
+    ls r2 dr0 0 Occupied
+    beqz r2 processEnd # don't harvest if there's no plant
     ls r2 dr0 0 Mature
     beqz r2 processEnd
     s dr1 Harvest 1
+    j checkHarvest
     
 processEnd:
     j ra
