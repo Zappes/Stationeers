@@ -1,0 +1,60 @@
+# Controller for a single silo, used for dispensing a definable amount of items.
+#
+# Have this on the same network as the following things:
+# - A silo
+# - A button for dispensing the chopsen amount of items
+# - A dial for setting the number of items to dispense
+# - A screen for showing the number of items currently in the silo
+# 
+# Hook everything up and you can press the button to extract the specified number
+# of items from your silo.
+#
+# Written by Zappes
+# CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+alias silo d0
+alias displayTotal d1
+alias dialAmount d2
+alias buttonDispense d3
+
+alias dispenseAmount r5
+
+loop:
+    jal updateTotal
+
+    l r0 buttonDispense Setting
+    bgtzal r0 dispense
+
+    yield
+
+    j loop
+
+updateTotal:
+    l r0 silo Quantity
+    s displayTotal Setting r0
+    j ra
+
+dispense:
+    s displayTotal Color 10
+    s silo ClearMemory 1
+    l dispenseAmount dialAmount Setting
+
+    s silo Open 1                       # open the silo and start dispensing
+
+    move r6 ra                          # save ra because we'll overwrite it when updating totals
+
+dispenseLoop:
+    l r0 silo Quantity
+    beqz r0 dispenseDone                # silo is empty, end dispensing operation
+
+    l r0 silo ExportCount
+    bge r0 dispenseAmount dispenseDone  # dispensed as much as was asked
+
+    jal updateTotal
+    j dispenseLoop
+
+dispenseDone:
+    s silo Open 0
+    s displayTotal Color 2
+
+    j r6
