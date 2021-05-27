@@ -1,0 +1,62 @@
+# Shows the state of your batteries along with current power flows and min/max
+# values for battery charge.
+#
+# Have this on the same network as the following things:
+# - Your batteries
+# - A total of 5 display modules
+# - A button for resetting the min/max display
+# 
+# Hook everything up and you can monitor the battery charge and power flow
+# quite nicely.
+#
+# Written by Zappes
+# CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+
+alias displayMin d0     # small LED display
+alias displayNow d1     # small LED display
+alias displayMax d2     # small LED display
+alias buttonReset d3    # resets min/max display
+alias displayIn d4      # large LED display
+alias displayOut d5     # large LED display
+
+alias min r10
+alias now r11
+alias max r12
+
+define batteryHash -1388288459
+
+  move min 2
+  move max -1
+  s displayMin Mode 1
+  s displayNow Mode 1
+  s displayMax Mode 1
+  s displayIn Mode 2
+  s displayOut Mode 2
+
+loop:
+  lb r0 batteryHash PowerPotential 3
+  s displayIn Setting r0
+
+  lb r0 batteryHash PowerActual 3
+  s displayOut Setting r0
+
+  l r0 buttonReset Setting
+  beqz r0 notReset
+  move min 2
+  move max -1
+
+notReset:
+  lb now batteryHash Ratio 0
+  bge now min notMin
+  move min now
+notMin:
+  ble now max notMax
+  move max now
+notMax:
+  s displayMin Setting min
+  s displayNow Setting now
+  s displayMax Setting max
+
+  yield
+  j loop
