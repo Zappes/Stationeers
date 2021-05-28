@@ -1,47 +1,43 @@
 # Controller for a number of heaters and coolers
 #
-# Make sure to have the following parts on your network:
-# - An air sensor
-# - A display (optional)
-# - Any number of wall coolers
-# - Any number of wall heaters
-#
-# As soon as everything is hooked up, the coolers and heaters will be controlled
-# so that the temperature stays between heatUnder and coolAbove.
-#
 # Written by Zappes
 # CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 
+define defaultTarget 20     # Default value: target temperature
+define defaultHysteresis 5  # Default value: hysteresis
+
 alias Sensor d0
 alias Display d1
+alias dialTarget d2         # optional dial for target temperature
+alias dialHysteresis d3     # optional dial for hysteresis
+
 alias temperature r10
+alias coolAbove r11
+alias heatUnder r12
+alias target r13
+alias hysteresis r14
 
-define hashHeater 24258244
 define hashCooler -739292323
-
-define hysteresis 5     # Dead zone around the trigger temperatures
-define target 30        # The target temperature
-define heatUnder 20     # The temperature below which the heaters start
-define coolAbove 40     # The temperature above which the coolers start
-
+define hashHeater 24258244
 define colCold 0
 define colGood 2
 define colHot 4
 
 loop:
-    jal updateTemperature
-    jal updateDisplay
-    jal checkHeaters
-    jal checkCoolers
-    yield
-    j loop
+    jal readDials           # read dials for hysteresis and target, if present
+    jal updateThresholds    # set up heatUnder/coolAbove
+    jal updateTemperature   # read sensor & convert to celsius
+    jal updateDisplay       # display temperature, if a display is connected
+    jal checkHeaters        # heaters on/off
+    jal checkCoolers        # coolers on/off
+    yield                   # leave some CPU cycles for the actual game...
+    j loop                  # here we go again
 
 checkCoolers:
     move r0 temperature
-    ble r0 target ccOff # disable cooler is temperature <= target
-    sub r0 r0 coolAbove
-    add r0 r0 hysteresis
-    bgez r0 ccOn
+    ble r0 target ccOff     # disable cooler if temperature <= target
+    bge r0 coolAbove ccOn   # enable cooler if temperature >= target+hysteresis
+    j ccDone
 
 ccOff:
     move r1 0
@@ -57,10 +53,8 @@ ccDone:
 
 checkHeaters:
     move r0 temperature
-    bge r0 target chOff # disable heater if temperature >= target
-    sub r0 r0 heatUnder
-    add r0 r0 hysteresis
-    blez r0 chOn
+    bge r0 target chOff     # disable heater if temperature >= target
+    ble r0 heatUnder chOn   # enable heater if temperature <= target-hysteresis
     j chDone
 
 chOff:
@@ -95,4 +89,31 @@ updateDisplay:
     s Display Color colHot
 
 udDone:
+    j ra
+
+updateThresholds:
+    # set up the thresholds at which the heaters and coolers kick in
+    move coolAbove target
+    add coolAbove coolAbove hysteresis
+    move heatUnder target
+    sub heatUnder heatUnder hysteresis
+    j ra
+
+readDials:
+    bdns dialTarget rdNoTarget
+    l target dialTarget Setting
+    j rdCheckHysteresis
+
+rdNoTarget:
+    move target defaultTarget
+
+rdCheckHysteresis:
+    bdns dialHysteresis rdNoHysteresis
+    l hysteresis dialHysteresis Setting
+    j rdDone
+
+rdNoHysteresis:
+    move hysteresis defaultHysteresis
+
+rdDone:
     j ra
