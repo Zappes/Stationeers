@@ -1,0 +1,29 @@
+# Sets up 6 filter controllers so they know what to actually filter.
+#
+# Written by Zappes
+# CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+alias Oxygen d0
+alias Nitrogen d1
+alias Carbon d2
+alias Nitrous d3
+alias Hydrogen d4
+alias Pollutant d5
+
+define typeOxygen 1
+define typeNitrogen 2
+define typeCarbon 3
+define typeNitrous 4
+define typeHydrogen 5
+define typePollutant 6
+
+loop:
+    s Oxygen Setting typeOxygen
+    s Nitrogen Setting typeNitrogen
+    s Carbon Setting typeCarbon
+    s Nitrous Setting typeNitrous
+    s Hydrogen Setting typeHydrogen
+    s Pollutant Setting typePollutant
+
+    sleep 10     # there's really no need to execute this very often...
+    j loop
