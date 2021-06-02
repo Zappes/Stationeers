@@ -62,12 +62,9 @@ checkSeeding:
     s dr1 Harvest 1
 
 checkHarvest:
-    ls r2 dr0 0 Occupied
-    beqz r2 processEnd
     ls r2 dr0 0 Mature
     beqz r2 processEnd
     s dr1 Harvest 1
-    j checkHarvest
 
 processEnd:
     j ra
