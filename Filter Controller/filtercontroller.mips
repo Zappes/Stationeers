@@ -9,7 +9,7 @@ alias led d2
 alias display d3
 alias analyzerMixture d4
 
-define minMoles 1           # number of moles in the input required for filter activation
+define minMoles 10          # number of moles in the input required for filter activation
 
 # set the value of the IC housing to one of these values to specify what the
 # filter is supposed to filter!
@@ -82,7 +82,7 @@ checkInput:
     l r1 analyzerMixture RatioNitrousOxide
     j ciGotRatio
     brgt r2 typeHydrogen 3
-    l r1 analyzerMixture RatioHydrogen
+    l r1 analyzerMixture RatioVolatiles
     j ciGotRatio
     brgt r2 typePollutant 2
     l r1 analyzerMixture RatioPollutant
@@ -90,7 +90,9 @@ checkInput:
 ciGotRatio:
     mul r0 r0 r1            # r0: moles of proper stuff in the input
     bge r0 minMoles ciOn    # more moles than MIN_MOLES? then activate filter!
-ciOff:
+    blt r0 1 ciOff          # nothing left in the pipe? disable filter.
+    j ciDone
+ciOff:   
     s filter On 0
     j ciDone
 ciOn:
