@@ -1,0 +1,39 @@
+alias pump1 d0
+alias pump2 d1
+alias pump3 d2
+alias pump4 d3
+alias analBefore d4
+alias analAfter d5
+
+alias moles r5
+alias pressure r6
+
+define maxPressure 10000                # never pump more than 10 mPa into the filters
+
+loop:
+    l moles analBefore TotalMoles
+    beqz moles switchOff                # always switch pumps off if there's nothing to pump
+
+    l pressure analAfter Pressure
+    bge pressure maxPressure switchOff  # switch them off if the max pressure is reched
+
+    j switchOn                          # switch them on otherwise
+
+done:
+    yield
+    j loop
+
+switchOn:
+    move r0 1
+    j switchPumps
+
+switchOff:
+    move r0 0
+    j switchPumps
+
+switchPumps:                            # put 1 or 0 into r0 and call this to switch pumps on/off
+    s pump1 On r0
+    s pump2 On r0
+    s pump3 On r0
+    s pump4 On r0
+    j done
