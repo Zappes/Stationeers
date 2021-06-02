@@ -27,11 +27,11 @@ alias harvie3 d5
 plantLoop:
     push r6
     jal process
-    
+
     add r6 r6 1
     mod r6 r6 3
 
-    sleep 3 # no need to run this more than every 3 seconds
+    sleep 5 # no need to run this more than every 5 seconds
 
     j plantLoop
 
@@ -41,24 +41,33 @@ process:
     add r1 r0 3 # we can access the harvie with dr1
 
     ls r2 dr0 0 Occupied
-    bnez r2 checkHarvest # don't plant if there's a plant
+    bnez r2 checkSeeding # don't plant if there's a plant
 
     ls r2 dr1 0 Occupied
-    beqz r2 checkHarvest # don't plant if we don't have seeds
-    
+    beqz r2 checkSeeding # don't plant if we don't have seeds
+
     l r2 db Setting
     beq r2 1 processEnd  # don't plant if it's blocked
 
+    s dr1 Harvest 0
     s dr1 Plant 1
-    j processEnd # it can't be mature already, so skip harvest  
+    j processEnd # it can't be mature already, so skip harvest
+
+checkSeeding:
+    s dr1 Plant 0
+    ls r2 dr0 0 Occupied
+    beqz r2 processEnd # don't harvest if there's no plant
+    ls r2 dr0 0 Seeding
+    beqz r2 checkHarvest
+    s dr1 Harvest 1
 
 checkHarvest:
     ls r2 dr0 0 Occupied
-    beqz r2 processEnd # don't harvest if there's no plant
+    beqz r2 processEnd
     ls r2 dr0 0 Mature
     beqz r2 processEnd
     s dr1 Harvest 1
     j checkHarvest
-    
+
 processEnd:
     j ra
