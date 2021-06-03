@@ -1,0 +1,31 @@
+alias composter d0
+alias vent d1
+alias door d2
+
+loop:
+    jal checkDoor
+    jal checkComposter
+
+    yield
+    j loop
+
+checkDoor:
+    l r0 door Open
+    beqz r0 cdVentOn
+    s vent On 0
+    j cdDone
+cdVentOn:
+    s vent On 1
+cdDone:
+    j ra
+
+checkComposter:
+    ls r0 composter 0 Occupied
+    beqz r0 ccProcess
+    s composter Activate 1
+ccProcess:
+    l r0 composter Quantity
+    beqz r0 ccDone
+    s composter Activate 1
+ccDone:
+    j ra
