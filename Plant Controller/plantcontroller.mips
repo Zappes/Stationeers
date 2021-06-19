@@ -58,7 +58,7 @@ checkSeeding:
     ls r2 dr0 0 Occupied
     beqz r2 processEnd # don't harvest if there's no plant
     ls r2 dr0 0 Seeding
-    beqz r2 checkHarvest
+    blez r2 checkHarvest
     s dr1 Harvest 1
 
 checkHarvest:
