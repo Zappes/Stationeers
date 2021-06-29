@@ -1,0 +1,54 @@
+alias Automation d0
+alias Pump d1
+alias Display d2
+
+alias currentFuel r6
+alias desiredFuel r7
+
+define pumpStrength 500                               # liters/sec setting for the pump
+define pumpOffPercentage 1                            # the percentage of max capacxity to which we fill the tank
+define maxFuel 8000                                   # max number of moles the tank can hold
+
+define green 2
+define red 4
+
+init:
+    s db Setting 0                                    # set to "not ready" until we know what's what
+
+    s Pump On 0                                       # disable the pump until we know more
+    s Pump Setting pumpStrength
+    
+
+    move desiredFuel maxFuel
+    mul desiredFuel desiredFuel pumpOffPercentage     # calculate the desired fill level for pump deactivation
+
+loop:
+    l currentFuel Automation Fuel
+    round r0 currentFuel
+
+    brge currentFuel desiredFuel 3
+    s Display Color red
+    j showFuel
+    s Display Color green
+showFuel:
+    s Display Setting r0
+
+    l r0 Automation Mode
+    bnez r0 done                                      # if mode != 0, we are not on the pad and can't refuel
+
+    bge currentFuel desiredFuel pumpOff               # switch pump off if we have the desired amount
+    j pumpOn
+
+done:
+    yield
+    j loop
+
+pumpOff:
+    s Pump On 0
+    s db Setting 1                                    # set housing value to 1 when rocket is fueled up
+    j done
+
+pumpOn:
+    s Pump On 1
+    s db Setting 0                                    # set housing value to 0 while fueling up
+    j done
