@@ -1,0 +1,107 @@
+alias Automation d0
+alias DisplayCountdown d1
+alias FuelController d2
+alias ModuleOre d3
+alias ModuleIce d4
+alias ModuleSilo d5
+
+alias currentMode r6
+alias previousImportCount r7
+alias importWaitTicks r8
+
+define maxWaitingTicks 50
+
+define modeLanded 0
+define modeLaunching 1
+define modeTraveling 2
+define modeArriving 3
+define modeInSpace 4
+define modeReturning 5
+define modeReturned 6
+define modeNoFuel 7
+
+define countdownStart 10
+define fuelReserve 1.1
+
+init:
+    move currentMode modeLanded
+    move previousImportCount 0
+    move importWaitTicks 0
+    s ModuleSilo Open 0
+    s ModuleSilo ClearMemory 1
+    s DisplayCountdown On 0
+
+loop:
+    l currentMode Automation Mode
+    s db Setting currentMode
+    beq currentMode modeLanded processLanded
+    beq currentMode modeInSpace processInSpace
+done:
+    s Automation Activate currentMode
+    yield
+    j loop
+
+processLanded:
+    s ModuleOre Activate 0
+    s ModuleIce Activate 0
+    s ModuleSilo Open 1
+    l r0 ModuleSilo Quantity
+    bgtz r0 done
+    s ModuleSilo Open 0
+    move previousImportCount 0
+    move importWaitTicks 0
+    l r0 FuelController Setting
+    beqz r0 done
+    move r0 countdownStart
+    s DisplayCountdown On 1  
+countdownLoop:
+    s DisplayCountdown Setting r0
+    sleep 1
+    sub r0 r0 1
+    bltz r0 countdownDone
+    j countdownLoop
+countdownDone:
+    s DisplayCountdown On 0
+    move currentMode modeLaunching
+    s ModuleSilo ClearMemory 1
+    j done
+
+processInSpace:
+    jal checkReturnFuel
+    l r0 Automation CollectableGoods
+    beqz r0 searchOres
+    l r0 ModuleSilo Quantity
+    bge r0 600 returnNow
+    l r0 ModuleSilo ImportCount
+    bne r0 previousImportCount countChanged
+    add importWaitTicks importWaitTicks 1
+    bgt importWaitTicks maxWaitingTicks searchOres
+    j mine
+countChanged:
+    move previousImportCount r0
+    move importWaitTicks 0
+mine:
+    s ModuleOre Activate 1
+    s ModuleIce Activate 1
+    j done
+
+searchOres:
+    s ModuleOre Activate 0
+    s ModuleIce Activate 0
+    s Automation Activate modeArriving
+    move previousImportCount 0
+    move importWaitTicks 0
+    move currentMode modeTraveling
+    j done
+
+checkReturnFuel:
+    l r0 Automation ReturnFuelCost
+    mul r0 r0 fuelReserve
+    l r1 Automation Fuel
+    ble r1 r0 returnNow
+    j ra
+returnNow:
+    move previousImportCount 0
+    move importWaitTicks 0
+    move currentMode modeReturning
+    j done

@@ -1,19 +1,24 @@
-alias mixer d0
-alias analyzer d1
+alias Mixer d0
+alias Analyzer d1
 
-define targetPressure 20000
+define targetPressure 18000
 
-    s mixer Lock 1
-    s mixer Setting 33            # put oxygen on in1, hydrogen on in2
-    s analyzer Lock 1
+    s db Setting 1
+    s Mixer Lock 1
+    s Mixer Setting 33 # put oxygen on in1, hydrogen on in2
+    s Analyzer Lock 1
 
 loop:
-    l r0 analyzer Pressure
+    l r0 Analyzer Pressure
+    s db Setting r0
     bge r0 targetPressure mixerOff
-    s mixer On 1
+
+    s Mixer On 1
     j end
+
 mixerOff:
-    s mixer On 0
+    s Mixer On 0
+
 end:
     yield
     j loop
