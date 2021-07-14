@@ -1,0 +1,54 @@
+alias DisplayAngle d0
+alias DisplaySetting d1
+alias DisplayNow d2
+alias Sensor d5
+
+alias ratioNow r7
+alias sunAngle r9
+alias panelSetting r10
+
+define hashDisplay -815193061
+define hashPanel -539224550
+
+init:
+    sb hashDisplay On 1
+    sb hashPanel Horizontal 90
+    s Sensor Mode 0
+    s DisplayAngle Mode 0
+    s DisplaySetting Mode 0
+    s DisplayNow Mode 1
+
+loop:
+    l sunAngle Sensor Vertical
+    brdns DisplayAngle 2
+    s DisplayAngle Setting sunAngle
+
+    jal computeSetting
+
+    sb hashPanel Vertical panelSetting
+
+    brdns DisplaySetting 2
+    s DisplaySetting Setting panelSetting
+
+    lb ratioNow hashPanel Ratio Average
+    brdns DisplayNow 2
+    s DisplayNow Setting ratioNow
+
+    yield
+    j loop
+
+computeSetting:
+    move r0 sunAngle
+
+    brgt r0 15 3
+    move panelSetting 0
+    j ra 
+
+    brgt r0 165 5
+    sub r0 r0 15
+    div r0 r0 1.5
+    move panelSetting r0
+    j ra 
+
+    move panelSetting 100
+    j ra
