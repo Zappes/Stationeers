@@ -2,6 +2,7 @@ alias Automation d0
 alias Pump d1
 alias Display d2
 alias LaunchEnable d3
+alias BufferQuantity d4
 
 alias currentFuel r6
 alias desiredFuel r7
@@ -48,9 +49,11 @@ pumpOff:
     s Pump On 0
 
     l r0 LaunchEnable Setting
+    l r1 BufferQuantity Setting
 
-    select r1 r0 1 0                                  # r1 will be 1 if LaunchEnable is 1, 0 otherwise
-    s db Setting r1                                   # set housing value to r1
+    select r2 r0 1 0                                  # r2 will be 1 if LaunchEnable is 1, 0 otherwise
+    select r3 r1 0 r2                                 # r3 will be 0 for buffer quantity > 0, r2 otherwise
+    s db Setting r3
     j done
 
 pumpOn:
