@@ -1,0 +1,90 @@
+alias Furnace d0
+alias ValveCold d1
+alias ValveHot d2
+alias Temperature d3
+alias Pressure d4
+
+alias pressTarget r5
+alias pressCurrent r6
+alias pressLower r7
+alias pressUpper r8
+
+alias tempTarget r9
+alias tempCurrent r10
+alias tempLower r11
+alias tempUpper r12
+
+define pressHysteresis 100
+define tempHysteresis 10
+
+define pumpOnSetting 100
+define pumpOffSetting 30
+
+init:
+    s ValveCold On 0
+    s ValveHot On 0
+    s Furnace SettingInput 0
+    s Furnace SettingOutput 0
+    yield
+
+loop:
+    l r0 Furnace On
+    beqz r0 init                    # get everything in a safe state if the furnace is off
+
+    jal calcParams
+    jal adjustPressure
+    jal adjustTemperature
+
+done:
+    yield
+    j loop
+
+calcParams:
+    l pressTarget Pressure Setting
+    l pressCurrent Furnace Pressure
+    sub pressLower pressTarget pressHysteresis
+    add pressUpper pressTarget pressHysteresis
+
+    l tempTarget Temperature Setting
+    l tempCurrent Furnace Temperature
+    sub tempLower tempTarget tempHysteresis
+    add tempUpper tempTarget tempHysteresis
+
+    j ra    
+
+adjustPressure:
+    brgt pressCurrent pressLower 4
+    s Furnace SettingInput pumpOnSetting
+    s Furnace SettingOutput pumpOffSetting
+    j ra
+
+    brgt pressCurrent pressTarget 3
+    s Furnace SettingOutput pumpOffSetting
+    j ra
+
+    brgt pressCurrent pressUpper 3
+    s Furnace SettingInput pumpOffSetting
+    j ra
+
+    s Furnace SettingInput pumpOffSetting
+    s Furnace SettingOutput pumpOnSetting
+
+    j ra
+
+adjustTemperature:
+    brgt tempCurrent tempLower 4
+    s ValveHot On 1
+    s ValveCold On 0
+    j ra
+
+    brgt tempCurrent tempTarget 3
+    s ValveHot On 0
+    j ra
+
+    brgt tempCurrent tempUpper 3
+    s ValveCold On 0
+    j ra
+
+    s ValveHot On 0
+    s ValveCold On 1
+    j ra

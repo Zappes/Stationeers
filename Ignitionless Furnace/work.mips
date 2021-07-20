@@ -1,0 +1,55 @@
+alias PumpIn d0
+alias PumpOut d1
+alias Analyzer d2
+alias Pressure d3
+
+alias pressTarget r6
+alias pressCurrent r7
+alias pressLower r8
+alias pressUpper r9
+
+define pressHysteresis 100
+define pumpSetting 100
+
+init:
+    s PumpIn On 0
+    s PumpIn Setting pumpSetting
+    s PumpOut On 0
+    s PumpOut Setting pumpSetting
+    s Analyzer On 1
+
+loop:
+    jal calcParams
+    jal adjustpress
+
+    s db Setting pressCurrent
+
+done:
+    yield
+    j loop
+
+calcParams:
+    l pressTarget Pressure Setting
+    l pressCurrent Analyzer Pressure
+    sub pressLower pressTarget pressHysteresis
+    add pressUpper pressTarget pressHysteresis
+    j ra
+
+adjustpress:
+    brgt pressCurrent pressLower 4
+    s PumpIn On 1
+    s PumpOut On 0
+    j ra
+
+    brgt pressCurrent pressTarget 3
+    s PumpOut On 0
+    j ra
+
+    brgt pressCurrent pressUpper 3
+    s PumpIn On 0
+    j ra
+
+    s PumpIn On 0
+    s PumpOut On 1
+
+    j ra

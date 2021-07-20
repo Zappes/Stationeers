@@ -1,0 +1,55 @@
+alias PumpIn d0
+alias PumpOut d1
+alias Analyzer d2
+alias Moles d3
+
+alias molesTarget r6
+alias molesCurrent r7
+alias molesLower r8
+alias molesUpper r9
+
+define molesHysteresis 10
+define pumpSetting 100
+
+init:
+    s PumpIn On 0
+    s PumpIn Setting pumpSetting
+    s PumpOut On 0
+    s PumpOut Setting pumpSetting
+    s Analyzer On 1
+
+loop:
+    jal calcParams
+    jal adjustMoles
+
+    s db Setting molesCurrent
+
+done:
+    yield
+    j loop
+
+calcParams:
+    l molesTarget Moles Setting
+    l molesCurrent Analyzer TotalMoles
+    sub molesLower molesTarget molesHysteresis
+    add molesUpper molesTarget molesHysteresis
+    j ra
+
+adjustMoles:
+    brgt molesCurrent molesLower 4
+    s PumpIn On 1
+    s PumpOut On 0
+    j ra
+
+    brgt molesCurrent molesTarget 3
+    s PumpOut On 0
+    j ra
+
+    brgt molesCurrent molesUpper 3
+    s PumpIn On 0
+    j ra
+
+    s PumpIn On 0
+    s PumpOut On 1
+
+    j ra
