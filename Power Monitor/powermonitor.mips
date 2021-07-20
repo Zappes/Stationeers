@@ -17,8 +17,8 @@ alias displayMin d0     # small LED display
 alias displayNow d1     # small LED display
 alias displayMax d2     # small LED display
 alias buttonReset d3    # resets min/max display
-alias displayIn d4      # large LED display
-alias displayOut d5     # large LED display
+alias displayIn d4      # large LED display (optional)
+alias displayOut d5     # large LED display (optional)
 
 alias min r10
 alias now r11
@@ -31,13 +31,17 @@ define batteryHash -1388288459
   s displayMin Mode 1
   s displayNow Mode 1
   s displayMax Mode 1
+  brdns displayIn 2
   s displayIn Mode 2
+  brdns displayOut 2
   s displayOut Mode 2
 
 loop:
+  brdns displayIn 3
   lb r0 batteryHash PowerPotential 3
   s displayIn Setting r0
 
+  brdns displayOut 3
   lb r0 batteryHash PowerActual 3
   s displayOut Setting r0
 
