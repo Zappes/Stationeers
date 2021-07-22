@@ -17,6 +17,8 @@
     define tempHysteresis 10
     define pumpSetting 100
 
+    define maxPressure 50000                        # switch off heaters when this pressure is exceeded
+
     define hashHeater -419758574
 
 init:
@@ -70,6 +72,12 @@ adjustMoles:
     j ra
 
 adjustTemperature:
+    l r0 Analyzer Pressure
+    ble r0 maxPressure pressureIsSafe
+    sb hashHeater On 0                  # turn heaters off above max pressure
+    j ra
+
+pressureIsSafe:
     brgt tempCurrent tempLower 3
     sb hashHeater On 1
     j ra
